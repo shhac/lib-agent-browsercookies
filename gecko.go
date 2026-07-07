@@ -105,21 +105,20 @@ func listGeckoProfilesIn(baseDir string, profilesSubdir bool) []geckoProfile {
 		scanDir = filepath.Join(baseDir, "Profiles")
 	}
 	if entries, err := os.ReadDir(scanDir); err == nil {
+		seen := make(map[string]bool, len(candidates))
+		for _, c := range candidates {
+			seen[c.path] = true
+		}
 		for _, e := range entries {
 			if !e.IsDir() {
 				continue
 			}
 			p := filepath.Join(scanDir, e.Name())
-			seen := false
-			for _, c := range candidates {
-				if c.path == p {
-					seen = true
-					break
-				}
+			if seen[p] {
+				continue
 			}
-			if !seen {
-				candidates = append(candidates, geckoProfile{path: p})
-			}
+			seen[p] = true
+			candidates = append(candidates, geckoProfile{path: p})
 		}
 	}
 

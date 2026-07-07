@@ -12,7 +12,9 @@ how a fix landing in one and not the other happens. This module owns it once.
 
 > **Status: scaffold.** The public API is being shaped by extracting the
 > existing implementations from agent-notion and agent-slack; it is not yet
-> stable. See [`doc.go`](./doc.go) for the intended design.
+> stable. See [`doc.go`](./doc.go) for the summary and
+> [`design-docs/design.md`](./design-docs/design.md) for the full design,
+> per-OS specifics, and the gotchas that must not be rediscovered.
 
 ## Mechanism vs policy
 

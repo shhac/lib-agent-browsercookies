@@ -76,15 +76,23 @@ func readChromiumCookie(plat Platform, s chromiumSpec, t Target, cookiesPath str
 	metaVersion := readCookieMetaVersion(copyPath)
 
 	rows, err := queryReadonlySqlite(copyPath,
-		"select value, encrypted_value from cookies where name = '"+t.CookieName+
-			"' and "+t.hostSQLClause("host_key")+" order by length(encrypted_value) desc")
+		"select host_key, value, encrypted_value from cookies where name = ? order by length(encrypted_value) desc",
+		t.CookieName)
 	if err != nil {
 		return "", err
 	}
-	if len(rows) == 0 {
+	// Host matching lives in one place (Target.matchesHost); rows come back
+	// longest-value first, so the first host match is the preferred row.
+	var row map[string]any
+	for _, r := range rows {
+		if t.matchesHost(rowString(r, "host_key")) {
+			row = r
+			break
+		}
+	}
+	if row == nil {
 		return "", errNoCookie(t)
 	}
-	row := rows[0]
 
 	// Rare: an unencrypted plaintext value.
 	if v := rowString(row, "value"); v != "" {

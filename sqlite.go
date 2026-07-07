@@ -38,15 +38,16 @@ func copyFile(src, dst string) error {
 }
 
 // queryReadonlySqlite opens the DB immutably (so a live lock never blocks the
-// read) and returns rows as column→value maps.
-func queryReadonlySqlite(dbPath, query string) ([]map[string]any, error) {
+// read) and returns rows as column→value maps. Any args are bound to the
+// query's placeholders — prefer this over string concatenation for values.
+func queryReadonlySqlite(dbPath, query string, args ...any) ([]map[string]any, error) {
 	db, err := sql.Open("sqlite", "file:"+dbPath+"?mode=ro&immutable=1")
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = db.Close() }()
 
-	rows, err := db.Query(query)
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}

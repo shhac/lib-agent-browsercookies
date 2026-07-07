@@ -24,29 +24,18 @@ type Target struct {
 	Decode bool
 }
 
-// matchesHost reports whether a store host belongs to this target.
+// matchesHost reports whether a store host belongs to this target. A leading
+// dot (the RFC 6265 domain-cookie marker) is ignored, then each suffix is
+// matched against the tail of the host — so "notion.so" matches both
+// "notion.so" and "www.notion.so".
 func (t Target) matchesHost(host string) bool {
 	host = strings.TrimPrefix(host, ".")
 	for _, suffix := range t.HostSuffixes {
-		if host == suffix || strings.HasSuffix(host, "."+suffix) || strings.HasSuffix(host, suffix) {
+		if strings.HasSuffix(host, suffix) {
 			return true
 		}
 	}
 	return false
-}
-
-// hostSQLClause builds a SQL predicate on the given column matching any of the
-// target's host suffixes. Values are suffixes with no user input beyond the
-// configured domains, so simple concatenation is safe here.
-func (t Target) hostSQLClause(col string) string {
-	if len(t.HostSuffixes) == 0 {
-		return "1=1"
-	}
-	parts := make([]string, 0, len(t.HostSuffixes))
-	for _, suffix := range t.HostSuffixes {
-		parts = append(parts, col+" like '%"+suffix+"'")
-	}
-	return "(" + strings.Join(parts, " or ") + ")"
 }
 
 // finalize applies the decode policy to a raw stored cookie value.

@@ -27,4 +27,9 @@ func TestTargetFinalize(t *testing.T) {
 	if got := decode.finalize("a%2Fb"); got != "a/b" {
 		t.Errorf("decode = %q", got)
 	}
+	// An invalid percent-escape can't be decoded; finalize returns it verbatim
+	// rather than erroring.
+	if got := decode.finalize("a%zz"); got != "a%zz" {
+		t.Errorf("undecodable value should pass through verbatim, got %q", got)
+	}
 }

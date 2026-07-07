@@ -159,6 +159,14 @@ func TestParseBinaryCookiePageBadHeader(t *testing.T) {
 	}
 }
 
+func TestParseBinaryCookiePageBadCount(t *testing.T) {
+	page := makeBinaryCookiePage(binaryCookie{Domain: "notion.so", Name: "token_v2", Value: "v"})
+	binary.LittleEndian.PutUint32(page[4:8], 0xFFFFFFFF) // count far exceeds the page
+	if _, err := parseBinaryCookiePage(page); err == nil {
+		t.Error("expected a bad-cookie-count error, not a huge allocation")
+	}
+}
+
 func TestParseBinaryCookieRecord(t *testing.T) {
 	valid := makeBinaryCookieRecord(binaryCookie{Domain: "notion.so", Name: "token_v2", Value: "v03%3Aabc"})
 

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 // chromiumSpec describes where a Chromium-family browser keeps its user-data
@@ -162,12 +163,9 @@ func readCookieMetaVersion(dbPath string) int {
 	case int64:
 		return int(v)
 	case string:
-		n := 0
-		for _, c := range v {
-			if c < '0' || c > '9' {
-				return 0
-			}
-			n = n*10 + int(c-'0')
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			return 0
 		}
 		return n
 	default:

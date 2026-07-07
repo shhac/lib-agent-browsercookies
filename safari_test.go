@@ -39,15 +39,17 @@ func TestReadSafariCookieFiltersByHostAndName(t *testing.T) {
 	}
 }
 
-func TestReadSafariCookieDecode(t *testing.T) {
+// The read layer returns the raw stored value; the Decode policy is applied at
+// the Extract boundary, not here.
+func TestReadSafariCookieRawRegardlessOfDecode(t *testing.T) {
 	data := makeBinaryCookies(makeBinaryCookiePage(
 		binaryCookie{Domain: ".notion.so", Name: "token_v2", Value: "v03%3Auser%2Fabc"},
 	))
 	tgt := notionTarget
 	tgt.Decode = true
 	got, ok := readSafariCookie(data, tgt)
-	if !ok || got != "v03:user/abc" {
-		t.Errorf("decoded value = %q, ok = %v", got, ok)
+	if !ok || got != "v03%3Auser%2Fabc" {
+		t.Errorf("read layer should return raw value = %q, ok = %v", got, ok)
 	}
 }
 

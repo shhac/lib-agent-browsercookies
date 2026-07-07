@@ -67,10 +67,10 @@ func extractGecko(plat Platform, s geckoSpec, t Target, profile string) (string,
 }
 
 // readGeckoCookie snapshots a profile's cookies.sqlite and returns the target
-// cookie's value. Firefox stores cookie values in plaintext (moz_cookies), so
-// there is no decryption — host matching runs in Go via Target.matchesHost and
-// finalize applies the caller's decode policy. Split from extractGecko so tests
-// can point at a fixture DB directly.
+// cookie's raw value. Firefox stores cookie values in plaintext (moz_cookies),
+// so there is no decryption — host matching runs in Go via Target.matchesHost,
+// and the caller's decode policy is applied once at the Extract boundary. Split
+// from extractGecko so tests can point at a fixture DB directly.
 func readGeckoCookie(t Target, cookiesPath string) (string, error) {
 	copyPath, cleanup, err := copySqliteForRead(cookiesPath)
 	if err != nil {
@@ -88,7 +88,7 @@ func readGeckoCookie(t Target, cookiesPath string) (string, error) {
 			continue
 		}
 		if v := rowString(row, "value"); v != "" {
-			return t.finalize(v), nil
+			return v, nil
 		}
 	}
 	return "", errNoCookie(t)

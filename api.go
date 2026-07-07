@@ -9,8 +9,8 @@ import (
 // source is one importable browser or app: it knows how to locate its store on
 // a platform and return the target cookie's value plus provenance.
 type source interface {
-	// extract returns the cookie value (already finalized per Target), the
-	// provenance map, and an error.
+	// extract returns the raw cookie value (decode policy is applied by the
+	// caller at the Extract boundary), the provenance map, and an error.
 	extract(plat Platform, t Target, profile string) (value string, provenance map[string]string, err error)
 	// supportsProfile reports whether the profile argument is meaningful
 	// (Firefox-family). Used only for help/metadata.
@@ -48,12 +48,13 @@ func Extract(name string, t Target, opts ...Option) (*Result, error) {
 	if !ok {
 		return nil, fmt.Errorf("unknown browser %q (supported: %s)", name, strings.Join(Names(), ", "))
 	}
-	// The source finalizes (verbatim vs decode) per the target as it reads.
+	// Sources return the raw stored value; the decode policy (verbatim vs
+	// URL-decode) is applied once here, at the boundary.
 	value, provenance, err := src.extract(o.plat, t, o.profile)
 	if err != nil {
 		return nil, err
 	}
-	return &Result{Value: value, Browser: key, Source: provenance}, nil
+	return &Result{Value: t.finalize(value), Browser: key, Source: provenance}, nil
 }
 
 // Info describes a supported source for help text and completion.

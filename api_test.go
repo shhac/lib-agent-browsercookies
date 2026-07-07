@@ -28,6 +28,26 @@ func TestExtractFromRegisteredChromium(t *testing.T) {
 	}
 }
 
+// TestExtractAppliesDecodePolicy pins the boundary: sources return the raw
+// value and Extract applies Target.Decode once.
+func TestExtractAppliesDecodePolicy(t *testing.T) {
+	home := t.TempDir()
+	profileDir := filepath.Join(home, "Library", "Application Support", "Google", "Chrome", "Default")
+	if err := mkdir(profileDir); err != nil {
+		t.Fatal(err)
+	}
+	newChromiumCookiesDB(t, profileDir, ".slack.com", "d", "xoxd-a%2Fb", nil, 0)
+
+	target := Target{CookieName: "d", HostSuffixes: []string{"slack.com"}, Decode: true}
+	res, err := Extract("chrome", target, WithPlatform(testPlatform(t, "darwin", home)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Value != "xoxd-a/b" {
+		t.Errorf("Extract should apply Decode: got %q", res.Value)
+	}
+}
+
 func TestExtractUnknownBrowser(t *testing.T) {
 	_, err := Extract("netscape", notionTarget, WithPlatform(testPlatform(t, "darwin", "/home")))
 	if err == nil || !strings.Contains(err.Error(), "unknown browser") {

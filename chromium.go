@@ -96,7 +96,7 @@ func readChromiumCookie(plat Platform, s chromiumSpec, t Target, cookiesPath str
 
 	// Rare: an unencrypted plaintext value.
 	if v := rowString(row, "value"); v != "" {
-		return t.finalize(v), nil
+		return v, nil
 	}
 
 	encrypted := rowBytes(row, "encrypted_value")
@@ -111,15 +111,15 @@ func readChromiumCookie(plat Platform, s chromiumSpec, t Target, cookiesPath str
 		if err != nil {
 			return "", err
 		}
-		return t.finalize(plain), nil
+		return plain, nil
 	}
 
-	return decryptChromiumUnix(plat, s.services, t, encrypted, metaVersion)
+	return decryptChromiumUnix(plat, s.services, encrypted, metaVersion)
 }
 
 // decryptChromiumUnix decrypts a macOS/Linux Chromium cookie with the AES-CBC
 // Safe Storage scheme, trying each candidate password until one unpads cleanly.
-func decryptChromiumUnix(plat Platform, services []string, t Target, encrypted []byte, metaVersion int) (string, error) {
+func decryptChromiumUnix(plat Platform, services []string, encrypted []byte, metaVersion int) (string, error) {
 	prefix := ""
 	if len(encrypted) >= 3 {
 		prefix = string(encrypted[:3])
@@ -145,7 +145,7 @@ func decryptChromiumUnix(plat Platform, services []string, t Target, encrypted [
 	}
 	for _, pw := range passwords {
 		if plain, err := decryptChromiumCBC(data, pw, chromiumIterations(plat.GOOS)); err == nil {
-			return t.finalize(stripHostHashPrefix(plain, metaVersion)), nil
+			return stripHostHashPrefix(plain, metaVersion), nil
 		}
 	}
 	return "", errors.New("could not decrypt the cookie with any Safe Storage password")

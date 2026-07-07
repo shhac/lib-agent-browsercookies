@@ -37,8 +37,9 @@ func safariCookiePaths(plat Platform) []string {
 }
 
 // extractSafari resolves Safari's cookie store and returns the target cookie's
-// finalized value plus the store path it came from. macOS only; a permission
-// error means Full Disk Access is missing.
+// raw value plus the store path it came from (the decode policy is applied at
+// the Extract boundary). macOS only; a permission error means Full Disk Access
+// is missing.
 func extractSafari(plat Platform, t Target) (value, path string, err error) {
 	if plat.GOOS != "darwin" {
 		return "", "", errors.New("safari cookie extraction is only supported on macOS")
@@ -64,10 +65,11 @@ func extractSafari(plat Platform, t Target) (value, path string, err error) {
 	return "", "", errNoCookie(t)
 }
 
-// readSafariCookie parses a Cookies.binarycookies blob and returns the finalized
-// value of the first cookie matching the target's name and host. Split out so
-// tests drive it with a fixture blob instead of a real Safari install. Returns
-// ok=false when the blob is unparseable or holds no matching cookie.
+// readSafariCookie parses a Cookies.binarycookies blob and returns the raw
+// value of the first cookie matching the target's name and host (the decode
+// policy is applied at the Extract boundary). Split out so tests drive it with
+// a fixture blob instead of a real Safari install. Returns ok=false when the
+// blob is unparseable or holds no matching cookie.
 func readSafariCookie(data []byte, t Target) (string, bool) {
 	cookies, err := parseBinaryCookies(data)
 	if err != nil {
@@ -75,7 +77,7 @@ func readSafariCookie(data []byte, t Target) (string, bool) {
 	}
 	for _, c := range cookies {
 		if c.Name == t.CookieName && t.matchesHost(c.Domain) && c.Value != "" {
-			return t.finalize(c.Value), true
+			return c.Value, true
 		}
 	}
 	return "", false

@@ -49,15 +49,17 @@ func TestReadGeckoCookieVerbatim(t *testing.T) {
 	}
 }
 
-func TestReadGeckoCookieDecodePolicy(t *testing.T) {
+// The read layer returns the raw stored value; the Decode policy is applied at
+// the Extract boundary, not here.
+func TestReadGeckoCookieRawRegardlessOfDecode(t *testing.T) {
 	db := newGeckoCookiesDB(t, t.TempDir(), ".slack.com", "d", "xoxd-a%2Fb")
 	target := Target{CookieName: "d", HostSuffixes: []string{"slack.com"}, Decode: true}
 	got, err := readGeckoCookie(target, db)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got != "xoxd-a/b" {
-		t.Errorf("Decode=true should URL-decode: got %q", got)
+	if got != "xoxd-a%2Fb" {
+		t.Errorf("read layer should return raw value, got %q", got)
 	}
 }
 

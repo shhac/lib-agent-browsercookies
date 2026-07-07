@@ -61,15 +61,17 @@ func TestReadChromiumCookieAppNotionCom(t *testing.T) {
 	}
 }
 
-func TestReadChromiumCookieDecodePolicy(t *testing.T) {
+// The read layer returns the raw stored value; the Decode policy is applied at
+// the Extract boundary (see TestExtractAppliesDecodePolicy), not here.
+func TestReadChromiumCookieRawRegardlessOfDecode(t *testing.T) {
 	db := newChromiumCookiesDB(t, t.TempDir(), ".slack.com", "d", "xoxd-a%2Fb", nil, 0)
 	target := Target{CookieName: "d", HostSuffixes: []string{"slack.com"}, Decode: true}
 	got, err := readChromiumCookie(testPlatform(t, "darwin", "/home"), chromiumSpec{}, target, db)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got != "xoxd-a/b" {
-		t.Errorf("Decode=true should URL-decode: got %q", got)
+	if got != "xoxd-a%2Fb" {
+		t.Errorf("read layer should return raw value, got %q", got)
 	}
 }
 

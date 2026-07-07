@@ -20,16 +20,10 @@ type geckoSpec struct {
 
 // baseDir resolves the app's profile root on the platform.
 func (s geckoSpec) baseDir(plat Platform) (string, error) {
-	switch plat.GOOS {
-	case "darwin":
-		return filepath.Join(plat.Home, "Library", "Application Support", s.darwin), nil
-	case "linux":
-		return filepath.Join(plat.Home, s.linux), nil
-	case "windows":
-		return filepath.Join(windowsAppData(plat), s.windows), nil
-	default:
-		return "", errors.New("unsupported OS for Firefox-family cookie extraction")
+	if dir, ok := appSupportDir(plat, s.darwin, s.linux, s.windows, windowsAppData); ok {
+		return dir, nil
 	}
+	return "", errors.New("unsupported OS for Firefox-family cookie extraction")
 }
 
 // geckoProfile is one discovered Firefox-family profile.

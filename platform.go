@@ -2,6 +2,7 @@ package browsercookies
 
 import (
 	"os"
+	"path/filepath"
 	"runtime"
 )
 
@@ -43,4 +44,40 @@ func (p Platform) getenv(k string) string {
 		return ""
 	}
 	return p.Getenv(k)
+}
+
+// windowsLocalAppData resolves %LOCALAPPDATA% (Chromium keeps its user data
+// here), falling back to the conventional path under the home dir.
+func windowsLocalAppData(plat Platform) string {
+	if v := plat.getenv("LOCALAPPDATA"); v != "" {
+		return v
+	}
+	return filepath.Join(plat.Home, "AppData", "Local")
+}
+
+// windowsAppData resolves %APPDATA% (Firefox keeps its profiles here), falling
+// back to the conventional path under the home dir.
+func windowsAppData(plat Platform) string {
+	if v := plat.getenv("APPDATA"); v != "" {
+		return v
+	}
+	return filepath.Join(plat.Home, "AppData", "Roaming")
+}
+
+// appSupportDir resolves an app's per-OS support directory from its per-OS
+// subpaths. windowsBase selects the Windows root — LocalAppData for Chromium,
+// AppData for Gecko — which is the only structural difference between the two
+// browser families. ok is false on an unsupported OS, leaving the error
+// message to the caller.
+func appSupportDir(plat Platform, darwinSub, linuxSub, windowsSub string, windowsBase func(Platform) string) (dir string, ok bool) {
+	switch plat.GOOS {
+	case "darwin":
+		return filepath.Join(plat.Home, "Library", "Application Support", darwinSub), true
+	case "linux":
+		return filepath.Join(plat.Home, linuxSub), true
+	case "windows":
+		return filepath.Join(windowsBase(plat), windowsSub), true
+	default:
+		return "", false
+	}
 }

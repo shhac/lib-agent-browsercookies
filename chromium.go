@@ -21,16 +21,10 @@ type chromiumSpec struct {
 
 // userDataDir resolves the browser's user-data directory on the platform.
 func (s chromiumSpec) userDataDir(plat Platform) (string, error) {
-	switch plat.GOOS {
-	case "darwin":
-		return filepath.Join(plat.Home, "Library", "Application Support", s.darwin), nil
-	case "linux":
-		return filepath.Join(plat.Home, s.linux), nil
-	case "windows":
-		return filepath.Join(windowsLocalAppData(plat), s.windows), nil
-	default:
-		return "", errors.New("unsupported OS for Chromium cookie extraction")
+	if dir, ok := appSupportDir(plat, s.darwin, s.linux, s.windows, windowsLocalAppData); ok {
+		return dir, nil
 	}
+	return "", errors.New("unsupported OS for Chromium cookie extraction")
 }
 
 // cookiesDB resolves the first existing Cookies database path.
@@ -171,22 +165,4 @@ func readCookieMetaVersion(dbPath string) int {
 	default:
 		return 0
 	}
-}
-
-func windowsLocalAppData(plat Platform) string {
-	if v := plat.getenv("LOCALAPPDATA"); v != "" {
-		return v
-	}
-	return filepath.Join(plat.Home, "AppData", "Local")
-}
-
-func windowsAppData(plat Platform) string {
-	if v := plat.getenv("APPDATA"); v != "" {
-		return v
-	}
-	return filepath.Join(plat.Home, "AppData", "Roaming")
-}
-
-func errNoCookie(t Target) error {
-	return errors.New("no " + t.CookieName + " cookie found in this browser")
 }

@@ -1,6 +1,7 @@
 package browsercookies
 
 import (
+	"errors"
 	"net/url"
 	"strings"
 )
@@ -36,6 +37,12 @@ func (t Target) matchesHost(host string) bool {
 		}
 	}
 	return false
+}
+
+// errNoCookie is the shared "cookie not present" error, naming the target so
+// every source reports the miss identically.
+func errNoCookie(t Target) error {
+	return errors.New("no " + t.CookieName + " cookie found in this browser")
 }
 
 // finalize applies the decode policy to a raw stored cookie value.

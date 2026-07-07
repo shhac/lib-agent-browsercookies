@@ -163,4 +163,3 @@ func TestWindowsAppDataFallbacks(t *testing.T) {
 		t.Errorf("APPDATA = %q", got)
 	}
 }
-

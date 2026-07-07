@@ -238,24 +238,15 @@ func pickGeckoProfiles(candidates []geckoProfile, selector string) []geckoProfil
 	return matched
 }
 
-// --- source adapter + registration ---
-
-// geckoSource adapts a geckoSpec to the source interface.
-type geckoSource struct {
-	summaryText string
-	spec        geckoSpec
-}
-
-func (g geckoSource) supportsProfile() bool { return true }
-func (g geckoSource) summary() string       { return g.summaryText }
-
-func (g geckoSource) extract(plat Platform, t Target, profile string) (string, map[string]string, error) {
-	return extractGecko(plat, g.spec, t, profile)
-}
-
 // registerGecko adds a Firefox-family browser to the registry.
 func registerGecko(name, summary string, spec geckoSpec) {
-	registry[name] = geckoSource{summaryText: summary, spec: spec}
+	registry[name] = source{
+		summary:         summary,
+		supportsProfile: true,
+		extract: func(plat Platform, t Target, profile string) (string, map[string]string, error) {
+			return extractGecko(plat, spec, t, profile)
+		},
+	}
 }
 
 func init() {

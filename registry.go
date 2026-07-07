@@ -6,24 +6,16 @@ var registry = map[string]source{}
 
 // registerChromium adds a Chromium-family browser to the registry.
 func registerChromium(name, summary string, spec chromiumSpec) {
-	registry[name] = chromiumSource{summaryText: summary, spec: spec}
-}
-
-// chromiumSource adapts a chromiumSpec to the source interface.
-type chromiumSource struct {
-	summaryText string
-	spec        chromiumSpec
-}
-
-func (c chromiumSource) supportsProfile() bool { return false }
-func (c chromiumSource) summary() string       { return c.summaryText }
-
-func (c chromiumSource) extract(plat Platform, t Target, _ string) (string, map[string]string, error) {
-	value, path, err := extractChromium(plat, c.spec, t)
-	if err != nil {
-		return "", nil, err
+	registry[name] = source{
+		summary: summary,
+		extract: func(plat Platform, t Target, _ string) (string, map[string]string, error) {
+			value, path, err := extractChromium(plat, spec, t)
+			if err != nil {
+				return "", nil, err
+			}
+			return value, map[string]string{"cookies_path": path}, nil
+		},
 	}
-	return value, map[string]string{"cookies_path": path}, nil
 }
 
 // chromiumSafeStorage is the macOS keychain service list for a browser, always

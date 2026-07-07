@@ -10,21 +10,19 @@ import (
 // cookie store requires.
 const safariFDAHint = "; grant your terminal Full Disk Access (System Settings → Privacy & Security → Full Disk Access), then retry"
 
-// safariSource reads a cookie from Safari's Cookies.binarycookies store. macOS
-// only: the store lives in a sandboxed container that needs Full Disk Access.
-type safariSource struct{}
-
-func init() { registry["safari"] = safariSource{} }
-
-func (safariSource) supportsProfile() bool { return false }
-func (safariSource) summary() string       { return "Safari cookie store (macOS; needs Full Disk Access)" }
-
-func (safariSource) extract(plat Platform, t Target, _ string) (string, map[string]string, error) {
-	value, path, err := extractSafari(plat, t)
-	if err != nil {
-		return "", nil, err
+// Safari reads a cookie from its Cookies.binarycookies store. macOS only: the
+// store lives in a sandboxed container that needs Full Disk Access.
+func init() {
+	registry["safari"] = source{
+		summary: "Safari cookie store (macOS; needs Full Disk Access)",
+		extract: func(plat Platform, t Target, _ string) (string, map[string]string, error) {
+			value, path, err := extractSafari(plat, t)
+			if err != nil {
+				return "", nil, err
+			}
+			return value, map[string]string{"cookies_path": path}, nil
+		},
 	}
-	return value, map[string]string{"cookies_path": path}, nil
 }
 
 // safariCookiePaths lists candidate Cookies.binarycookies locations under the

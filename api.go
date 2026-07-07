@@ -7,16 +7,18 @@ import (
 )
 
 // source is one importable browser or app: it knows how to locate its store on
-// a platform and return the target cookie's value plus provenance.
-type source interface {
-	// extract returns the raw cookie value (decode policy is applied by the
-	// caller at the Extract boundary), the provenance map, and an error.
-	extract(plat Platform, t Target, profile string) (value string, provenance map[string]string, err error)
+// a platform and return the target cookie's value plus provenance. There is one
+// behavior per source (locate + read), so a struct with a func field is a
+// better fit than an interface with a lone implementation each.
+type source struct {
+	// summary is a one-line human description.
+	summary string
 	// supportsProfile reports whether the profile argument is meaningful
 	// (Firefox-family). Used only for help/metadata.
-	supportsProfile() bool
-	// summary is a one-line human description.
-	summary() string
+	supportsProfile bool
+	// extract returns the raw cookie value (decode policy is applied by the
+	// caller at the Extract boundary), the provenance map, and an error.
+	extract func(plat Platform, t Target, profile string) (value string, provenance map[string]string, err error)
 }
 
 // options configure Extract.
@@ -68,7 +70,7 @@ type Info struct {
 func Sources() []Info {
 	out := make([]Info, 0, len(registry))
 	for name, src := range registry {
-		out = append(out, Info{Name: name, Summary: src.summary(), SupportsProfile: src.supportsProfile()})
+		out = append(out, Info{Name: name, Summary: src.summary, SupportsProfile: src.supportsProfile})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out

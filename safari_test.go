@@ -138,15 +138,15 @@ func TestExtractSafariPermissionDenied(t *testing.T) {
 }
 
 func TestSafariSourceMetadataAndRegistry(t *testing.T) {
-	s := safariSource{}
-	if s.supportsProfile() {
+	s, ok := registry["safari"]
+	if !ok {
+		t.Fatal("safari not registered")
+	}
+	if s.supportsProfile {
 		t.Error("Safari does not support profiles")
 	}
-	if !strings.Contains(s.summary(), "Safari") {
-		t.Errorf("summary = %q", s.summary())
-	}
-	if _, ok := registry["safari"]; !ok {
-		t.Error("safari not registered")
+	if !strings.Contains(s.summary, "Safari") {
+		t.Errorf("summary = %q", s.summary)
 	}
 }
 

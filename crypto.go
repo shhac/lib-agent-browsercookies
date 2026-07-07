@@ -3,7 +3,7 @@ package browsercookies
 import (
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/hmac"
+	"crypto/pbkdf2"
 	"crypto/sha1"
 	"errors"
 )
@@ -24,7 +24,10 @@ func decryptChromiumCBC(data []byte, password string, iterations int) ([]byte, e
 		return nil, errors.New("cookie data is not a multiple of the AES block size")
 	}
 
-	key := pbkdf2SHA1([]byte(password), []byte("saltysalt"), iterations, 16)
+	key, err := pbkdf2.Key(sha1.New, password, []byte("saltysalt"), iterations, 16)
+	if err != nil {
+		return nil, err
+	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
@@ -86,38 +89,4 @@ func pkcs7Unpad(data []byte, blockSize int) ([]byte, error) {
 		}
 	}
 	return data[:len(data)-pad], nil
-}
-
-// pbkdf2SHA1 is a minimal PBKDF2-HMAC-SHA1, avoiding a golang.org/x/crypto
-// dependency for this single use.
-func pbkdf2SHA1(password, salt []byte, iter, keyLen int) []byte {
-	prf := hmac.New(sha1.New, password)
-	hashLen := prf.Size()
-	numBlocks := (keyLen + hashLen - 1) / hashLen
-
-	out := make([]byte, 0, numBlocks*hashLen)
-	buf := make([]byte, 4)
-	for block := 1; block <= numBlocks; block++ {
-		prf.Reset()
-		prf.Write(salt)
-		buf[0] = byte(block >> 24)
-		buf[1] = byte(block >> 16)
-		buf[2] = byte(block >> 8)
-		buf[3] = byte(block)
-		prf.Write(buf)
-		u := prf.Sum(nil)
-
-		t := make([]byte, len(u))
-		copy(t, u)
-		for n := 1; n < iter; n++ {
-			prf.Reset()
-			prf.Write(u)
-			u = prf.Sum(nil)
-			for i := range t {
-				t[i] ^= u[i]
-			}
-		}
-		out = append(out, t...)
-	}
-	return out[:keyLen]
 }

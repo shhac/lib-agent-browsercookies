@@ -3,6 +3,8 @@ package browsercookies
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/pbkdf2"
+	"crypto/sha1"
 	"database/sql"
 	"os"
 	"path/filepath"
@@ -55,7 +57,10 @@ func newChromiumCookiesDB(t *testing.T, dir, host, name, value string, encrypted
 // plaintext + password, matching decryptChromiumCBC.
 func encryptCBC(t *testing.T, plaintext []byte, password string, iterations int) []byte {
 	t.Helper()
-	key := pbkdf2SHA1([]byte(password), []byte("saltysalt"), iterations, 16)
+	key, err := pbkdf2.Key(sha1.New, password, []byte("saltysalt"), iterations, 16)
+	if err != nil {
+		t.Fatal(err)
+	}
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		t.Fatal(err)

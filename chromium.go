@@ -114,6 +114,12 @@ func readChromiumCookie(plat Platform, s chromiumSpec, t Target, cookiesPath str
 		return t.finalize(plain), nil
 	}
 
+	return decryptChromiumUnix(plat, s.services, t, encrypted, metaVersion)
+}
+
+// decryptChromiumUnix decrypts a macOS/Linux Chromium cookie with the AES-CBC
+// Safe Storage scheme, trying each candidate password until one unpads cleanly.
+func decryptChromiumUnix(plat Platform, services []string, t Target, encrypted []byte, metaVersion int) (string, error) {
 	prefix := ""
 	if len(encrypted) >= 3 {
 		prefix = string(encrypted[:3])
@@ -123,7 +129,17 @@ func readChromiumCookie(plat Platform, s chromiumSpec, t Target, cookiesPath str
 		data = encrypted[3:]
 	}
 
-	passwords := plat.Keychain(s.services, prefix)
+	passwords := plat.Keychain(services)
+	if plat.GOOS == "linux" {
+		// Chromium Linux OSCrypt fallbacks (os_crypt_linux.cc): the empty
+		// passphrase for v11, then the hardcoded default "peanuts". These are
+		// Chromium policy, not a secret-store lookup, so they live here.
+		if prefix == "v11" {
+			passwords = append(passwords, "")
+		}
+		passwords = append(passwords, "peanuts")
+	}
+	passwords = dedupe(passwords)
 	if len(passwords) == 0 {
 		return "", errors.New("could not read a Safe Storage password from the OS keychain")
 	}

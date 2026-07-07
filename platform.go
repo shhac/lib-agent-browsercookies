@@ -17,12 +17,13 @@ type Platform struct {
 	// Getenv resolves an environment variable (APPDATA, LOCALAPPDATA on
 	// Windows). Never nil in a usable Platform.
 	Getenv func(string) string
-	// Keychain returns candidate Chromium Safe Storage passwords for the given
-	// service names, in try order. On macOS these come from the login Keychain,
-	// on Linux from secret-tool plus Chromium's OSCrypt fallbacks; on Windows
-	// the key is DPAPI-wrapped instead and this is unused. Injected so tests
+	// Keychain returns Safe Storage passwords held by the OS secret store for
+	// the given service names, in try order — the login Keychain on macOS,
+	// secret-tool on Linux. Windows wraps the key with DPAPI instead, so this is
+	// unused there. Chromium's non-keychain OSCrypt fallbacks (the Linux
+	// "peanuts" default) live in the Chromium layer, not here. Injected so tests
 	// never touch the real secret store.
-	Keychain func(services []string, prefix string) []string
+	Keychain func(services []string) []string
 }
 
 // System returns the production Platform for the host it runs on.

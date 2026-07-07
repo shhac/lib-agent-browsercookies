@@ -19,7 +19,7 @@ func testPlatform(t *testing.T, goos, home string, passwords ...string) Platform
 		GOOS:   goos,
 		Home:   home,
 		Getenv: func(string) string { return "" },
-		Keychain: func([]string, string) []string {
+		Keychain: func([]string) []string {
 			return append([]string(nil), passwords...)
 		},
 	}
